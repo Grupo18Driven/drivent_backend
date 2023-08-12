@@ -60,6 +60,12 @@ function getRandomInt(min: number, max: number): number {
 }
 
 async function seed() {
+  async function clearHotels() {
+    await prisma.booking.deleteMany({});
+    await prisma.room.deleteMany({});
+    await prisma.hotel.deleteMany({});
+  }
+  clearHotels();
   try {
     const hotelData = [
       {
@@ -77,39 +83,35 @@ async function seed() {
     ];
 
     for (const data of hotelData) {
+      let maxCapacity = 0;
+      if (data.name === 'CozyHaven') {
+        maxCapacity = 1;
+      } else if (data.name === 'UrbanStay') {
+        maxCapacity = 2;
+      } else if (data.name === 'LuxInn') {
+        maxCapacity = 3;
+      }
+
       const hotel = await prisma.hotel.create({
         data: {
           name: data.name,
           image: data.image,
           Rooms: {
-            create: Array(40)
-              .map(() => {
-                const maxCapacity = 0;
-                if (data.name === 'CozyHaven') {
-                  const maxCapacity = 1
-                }
-                if (data.name === 'UrbanStay') {
-                  const maxCapacity = 2
-                }
-                if (data.name === 'LuxInn') {
-                  const maxCapacity = 3
-                }
-                const number = getRandomInt(1,maxCapacity);
-                const roomName = '';
-                if (number === 1) {
-                  const roomName = 'Single'
-                }
-                if (number === 2) {
-                  const roomName = 'Double'
-                }
-                if (number === 3) {
-                  const roomName = 'Triple'
-                }
-                return {
-                  name: roomName,
-                  capacity: number
-                }
-              })
+            create: Array(40).fill(null).map(() => {
+              const number = getRandomInt(1, maxCapacity);
+              let roomName = '';
+              if (number === 1) {
+                roomName = 'Single';
+              } else if (number === 2) {
+                roomName = 'Double';
+              } else if (number === 3) {
+                roomName = 'Triple';
+              }
+              return {
+                name: roomName,
+                capacity: number
+              };
+            })
           }
         }
       });
@@ -124,3 +126,4 @@ async function seed() {
 }
 
 seed();
+
