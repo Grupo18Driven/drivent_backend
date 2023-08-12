@@ -16,52 +16,41 @@ async function main() {
     });
   }
 
-  const ticketTypes = [
-    {
-      name: "Online",
-      price: 10000, 
-      isRemote: true,
-      includesHotel: false,
-    },
-    {
-      name: "Presencial sem Hotel",
-      price: 25000, 
-      isRemote: false,
-      includesHotel: false,
-    },
-    {
-      name: "Presencial com Hotel",
-      price: 60000, 
-      isRemote: false,
-      includesHotel: true,
-    },
-  ];
+  let ticketTypes = await prisma.ticketType.findFirst();
 
-  for (const ticketType of ticketTypes) {
-    await prisma.ticketType.create({
-      data: ticketType,
-    });
+  if (!ticketTypes) {
+    const ticketTypes = [
+      {
+        name: "Online",
+        price: 10000, 
+        isRemote: true,
+        includesHotel: false,
+      },
+      {
+        name: "Presencial sem Hotel",
+        price: 25000, 
+        isRemote: false,
+        includesHotel: false,
+      },
+      {
+        name: "Presencial com Hotel",
+        price: 60000, 
+        isRemote: false,
+        includesHotel: true,
+      },
+    ];
+  
+    for (const ticketType of ticketTypes) {
+      await prisma.ticketType.create({
+        data: ticketType,
+      });
+    }
   }
 
-  console.log({ event });
-}
+  let hotels = await prisma.hotel.findFirst();
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-
-function getRandomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-async function seed() {
-  try {
-    const hotelData = [
+  if (!hotels) {
+    const hotels = [
       {
         name: 'LuxInn',
         image: 'https://i.pinimg.com/564x/12/d6/5e/12d65ed40d985f4e89c572a2ad621fec.jpg'
@@ -76,51 +65,74 @@ async function seed() {
       }
     ];
 
-    for (const data of hotelData) {
-      const hotel = await prisma.hotel.create({
-        data: {
-          name: data.name,
-          image: data.image,
-          Rooms: {
-            create: Array(40)
-              .map(() => {
-                const maxCapacity = 0;
-                if (data.name === 'CozyHaven') {
-                  const maxCapacity = 1
-                }
-                if (data.name === 'UrbanStay') {
-                  const maxCapacity = 2
-                }
-                if (data.name === 'LuxInn') {
-                  const maxCapacity = 3
-                }
-                const number = getRandomInt(1,maxCapacity);
-                const roomName = '';
-                if (number === 1) {
-                  const roomName = 'Single'
-                }
-                if (number === 2) {
-                  const roomName = 'Double'
-                }
-                if (number === 3) {
-                  const roomName = 'Triple'
-                }
-                return {
-                  name: roomName,
-                  capacity: number
-                }
-              })
-          }
-        }
+    for (const hotel of hotels) {
+      await prisma.hotel.create({
+        data: hotel,
       });
-
-      console.log(`Hotel "${hotel.name}" criado com sucesso.`);
     }
-  } catch (error) {
-    console.error('Erro ao adicionar hotéis e quartos:', error);
-  } finally {
-    await prisma.$disconnect();
   }
+
+  let rooms = await prisma.room.findFirst();
+
+  if (!rooms) {
+    const rooms = [
+      {
+        name: '101',
+        capacity: 1,
+        hotelId: 1,
+      },
+      {
+        name: '102',
+        capacity: 2,
+        hotelId: 1,
+      },
+      {
+        name: '103',
+        capacity: 3,
+        hotelId: 1,
+      },
+    ];
+
+    for (const room of rooms) {
+      await prisma.room.create({
+        data: room,
+      });
+    }
+  };
+
+  let bookings = await prisma.booking.findFirst();
+
+  if (!bookings) {
+    const bookings = [
+      {
+        userId: 1,
+        roomId: 1,
+      },
+      {
+        userId: 2,
+        roomId: 3,
+      },
+      {
+        userId: 3,
+        roomId: 3,
+      },
+    ];
+
+    for (const booking of bookings) {
+      await prisma.booking.create({
+        data: booking,
+      });
+    }
+  };
+
+  console.log({ event });
 }
 
-seed();
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+});
