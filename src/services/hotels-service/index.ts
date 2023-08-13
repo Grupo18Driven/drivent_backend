@@ -19,8 +19,7 @@ async function listHotels(userId: number) {
 }
 
 async function getHotels(userId: number) {
-  // comentado para rodar sem o pagamentos
-  // await listHotels(userId);
+  await listHotels(userId);
 
   const hotels = await hotelRepository.findHotels();
   return hotels;

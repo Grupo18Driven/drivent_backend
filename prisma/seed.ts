@@ -16,6 +16,19 @@ async function main() {
     });
   }
 
+  let users = await prisma.user.findFirst();
+
+  if (!users) {
+    for (let i = 1; i <= 40; i++) {
+      await prisma.user.create({
+        data: {
+          email: `user${i}@example.com`,
+          password: `password${i}`,
+        },
+      });
+    }
+  }
+
   let ticketTypes = await prisma.ticketType.findFirst();
 
   if (!ticketTypes) {
@@ -75,57 +88,89 @@ async function main() {
   let rooms = await prisma.room.findFirst();
 
   if (!rooms) {
-    const rooms = [
-      {
-        name: '101',
-        capacity: 1,
-        hotelId: 1,
-      },
-      {
-        name: '102',
-        capacity: 2,
-        hotelId: 1,
-      },
-      {
-        name: '103',
-        capacity: 3,
-        hotelId: 1,
-      },
-    ];
-
-    for (const room of rooms) {
+    
+    for (let i = 101; i <= 120; i++) {
+      const capacity = Math.floor(Math.random() * 3) + 1;
+  
       await prisma.room.create({
-        data: room,
+        data: {
+          name: `${i}`,
+          capacity: capacity,
+          hotelId: 1,
+        },
       });
-    }
-  };
+    };
+
+    for (let i = 101; i <= 120; i++) {
+      const capacity = Math.floor(Math.random() * 3) + 1;
+  
+      await prisma.room.create({
+        data: {
+          name: `${i}`,
+          capacity: capacity,
+          hotelId: 2,
+        },
+      });
+    };
+
+    for (let i = 101; i <= 120; i++) {
+      const capacity = Math.floor(Math.random() * 3) + 1;
+  
+      await prisma.room.create({
+        data: {
+          name: `${i}`,
+          capacity: capacity,
+          hotelId: 3,
+        },
+      });
+    };
+  }
 
   let bookings = await prisma.booking.findFirst();
 
   if (!bookings) {
-    const bookings = [
-      {
-        userId: 1,
-        roomId: 1,
-      },
-      {
-        userId: 2,
-        roomId: 3,
-      },
-      {
-        userId: 3,
-        roomId: 3,
-      },
-    ];
+    let roomId = 1;
+    let userId = 1;
 
-    for (const booking of bookings) {
-      await prisma.booking.create({
-        data: booking,
+    while (roomId <= 60) {
+      if (userId > 40) {
+        break;
+      }
+
+      const room = await prisma.room.findFirst({
+        where: {
+          id: roomId,
+        }
       });
+      const randomChanceOfBooking = generateRandomBoolean(0.3);
+
+      if (randomChanceOfBooking && room) {
+        for(let i=0; i<room.capacity; i++) {
+          const randomChanceOfAnotherBooking = generateRandomBoolean(0.5);
+          if (randomChanceOfAnotherBooking || i===0) {
+            await prisma.booking.create({
+              data: {
+                userId: userId,
+                roomId: roomId,
+              }
+            })
+            userId++
+            if (userId > 40) {
+              break;
+            }
+          }
+        }
+      }
+      roomId++
     }
   };
 
   console.log({ event });
+}
+
+function generateRandomBoolean(chanceOfTrue : number) : boolean {
+  const randomValue = Math.random();
+  return randomValue < chanceOfTrue;
 }
 
 main()
