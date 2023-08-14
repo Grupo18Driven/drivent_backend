@@ -16,58 +16,54 @@ async function main() {
     });
   }
 
-  const ticketTypes = [
-    {
-      name: "Online",
-      price: 10000, 
-      isRemote: true,
-      includesHotel: false,
-    },
-    {
-      name: "Presencial sem Hotel",
-      price: 25000, 
-      isRemote: false,
-      includesHotel: false,
-    },
-    {
-      name: "Presencial com Hotel",
-      price: 60000, 
-      isRemote: false,
-      includesHotel: true,
-    },
-  ];
+  let users = await prisma.user.findFirst();
 
-  for (const ticketType of ticketTypes) {
-    await prisma.ticketType.create({
-      data: ticketType,
-    });
+  if (!users) {
+    for (let i = 1; i <= 40; i++) {
+      await prisma.user.create({
+        data: {
+          email: `user${i}@example.com`,
+          password: `password${i}`,
+        },
+      });
+    }
   }
 
-  console.log({ event });
-}
+  let ticketTypes = await prisma.ticketType.findFirst();
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-
-function getRandomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-async function seed() {
-  async function clearHotels() {
-    await prisma.booking.deleteMany({});
-    await prisma.room.deleteMany({});
-    await prisma.hotel.deleteMany({});
+  if (!ticketTypes) {
+    const ticketTypes = [
+      {
+        name: "Online",
+        price: 10000, 
+        isRemote: true,
+        includesHotel: false,
+      },
+      {
+        name: "Presencial sem Hotel",
+        price: 25000, 
+        isRemote: false,
+        includesHotel: false,
+      },
+      {
+        name: "Presencial com Hotel",
+        price: 60000, 
+        isRemote: false,
+        includesHotel: true,
+      },
+    ];
+  
+    for (const ticketType of ticketTypes) {
+      await prisma.ticketType.create({
+        data: ticketType,
+      });
+    }
   }
-  clearHotels();
-  try {
-    const hotelData = [
+
+  let hotels = await prisma.hotel.findFirst();
+
+  if (!hotels) {
+    const hotels = [
       {
         name: 'LuxInn',
         image: 'https://i.pinimg.com/564x/12/d6/5e/12d65ed40d985f4e89c572a2ad621fec.jpg'
@@ -82,48 +78,106 @@ async function seed() {
       }
     ];
 
-    for (const data of hotelData) {
-      let maxCapacity = 0;
-      if (data.name === 'CozyHaven') {
-        maxCapacity = 1;
-      } else if (data.name === 'UrbanStay') {
-        maxCapacity = 2;
-      } else if (data.name === 'LuxInn') {
-        maxCapacity = 3;
+    for (const hotel of hotels) {
+      await prisma.hotel.create({
+        data: hotel,
+      });
+    }
+  }
+
+  let rooms = await prisma.room.findFirst();
+
+  if (!rooms) {
+    
+    for (let i = 101; i <= 120; i++) {
+      const capacity = Math.floor(Math.random() * 3) + 1;
+  
+      await prisma.room.create({
+        data: {
+          name: `${i}`,
+          capacity: capacity,
+          hotelId: 1,
+        },
+      });
+    };
+
+    for (let i = 101; i <= 120; i++) {
+      const capacity = Math.floor(Math.random() * 3) + 1;
+  
+      await prisma.room.create({
+        data: {
+          name: `${i}`,
+          capacity: capacity,
+          hotelId: 2,
+        },
+      });
+    };
+
+    for (let i = 101; i <= 120; i++) {
+      const capacity = Math.floor(Math.random() * 3) + 1;
+  
+      await prisma.room.create({
+        data: {
+          name: `${i}`,
+          capacity: capacity,
+          hotelId: 3,
+        },
+      });
+    };
+  }
+
+  let bookings = await prisma.booking.findFirst();
+
+  if (!bookings) {
+    let roomId = 1;
+    let userId = 1;
+
+    while (roomId <= 60) {
+      if (userId > 40) {
+        break;
       }
 
-      const hotel = await prisma.hotel.create({
-        data: {
-          name: data.name,
-          image: data.image,
-          Rooms: {
-            create: Array(40).fill(null).map(() => {
-              const number = getRandomInt(1, maxCapacity);
-              let roomName = '';
-              if (number === 1) {
-                roomName = 'Single';
-              } else if (number === 2) {
-                roomName = 'Double';
-              } else if (number === 3) {
-                roomName = 'Triple';
-              }
-              return {
-                name: roomName,
-                capacity: number
-              };
-            })
-          }
+      const room = await prisma.room.findFirst({
+        where: {
+          id: roomId,
         }
       });
+      const randomChanceOfBooking = generateRandomBoolean(0.3);
 
-      console.log(`Hotel "${hotel.name}" criado com sucesso.`);
+      if (randomChanceOfBooking && room) {
+        for(let i=0; i<room.capacity; i++) {
+          const randomChanceOfAnotherBooking = generateRandomBoolean(0.5);
+          if (randomChanceOfAnotherBooking || i===0) {
+            await prisma.booking.create({
+              data: {
+                userId: userId,
+                roomId: roomId,
+              }
+            })
+            userId++
+            if (userId > 40) {
+              break;
+            }
+          }
+        }
+      }
+      roomId++
     }
-  } catch (error) {
-    console.error('Erro ao adicionar hotéis e quartos:', error);
-  } finally {
-    await prisma.$disconnect();
-  }
+  };
+
+  console.log({ event });
 }
 
-seed();
+function generateRandomBoolean(chanceOfTrue : number) : boolean {
+  const randomValue = Math.random();
+  return randomValue < chanceOfTrue;
+}
 
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+});
